@@ -8,14 +8,13 @@ import java.util.Collections;
 
 public class RandomAi extends AI {
 
-    public RandomAi(MainFrame mainFrame, GamePanel gamePanel) {
-        super(mainFrame, gamePanel);
+    public RandomAi(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove) {
+        super(mainFrame, gamePanel, callMakeMove);
     }
 
     @Override
     public void run() {
-        try { sleep(500); }
-        catch (InterruptedException e) { e.printStackTrace(); }
+        moveStart();
 
         ArrayList<Integer> columns = new ArrayList<>(mainFrame.heapsCo());
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
@@ -32,11 +31,17 @@ public class RandomAi extends AI {
             Collections.shuffle(rows);
             for (int j = 0; j < mainFrame.heapStates[column]; j++) {
                 int row = rows.get(j);
-                if (gamePanel.makeMove(column, row)) {
+                if (gamePanel.isMoveValid(column, row, mainFrame.heapStates, gamePanel.prevMove)) {
+                    if (callMakeMove) {
+                        gamePanel.makeMove(column, row);
+                    } else {
+                        selectedColumn = column;
+                        selectedRow = row;
+                    }
+                    moveEnd();
                     return;
                 }
             }
         }
-
     }
 }

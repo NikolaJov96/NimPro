@@ -3,10 +3,9 @@ package main.minimax;
 import main.GamePanel;
 import main.MainFrame;
 
-import java.util.ArrayList;
-
 public class Minimax extends AI {
     private int prevMove;
+    private int depth;
 
     class MinimaxNode {
         public int [] state;
@@ -18,35 +17,93 @@ public class Minimax extends AI {
         }
     }
 
-    public Minimax(MainFrame mainFrame, GamePanel gamePanel, int prevMove) {
-        super(mainFrame, gamePanel);
+    public Minimax(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove, int prevMove, int depth) {
+        super(mainFrame, gamePanel, callMakeMove);
         this.prevMove = prevMove;
+        this.depth = depth;
     }
 
     @Override
     public void run() {
+        moveStart();
+
         MinimaxNode node = new MinimaxNode(mainFrame.heapStates.clone(), prevMove);
-        iteration(node);
-        // do stuff
+        int bestMoveColumn = -1;
+        int bestMoveRow = -1;
+        float bestMoveValue = -1;
 
-        //gamePanel.makeMove();
-    }
-
-    private void iteration(MinimaxNode node) {
-        // find all possible moves
-        ArrayList<MinimaxNode> nodeList = new ArrayList<>();
+        // iterate through first possible moves
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
             for (int j = 0; j < mainFrame.heapStates[i]; j++) {
                 if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
-                    MinimaxNode newNode = new MinimaxNode( node.state.clone(), node.state[i] - j);
+                    MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                     newNode.state[i] = j;
-                    nodeList.add(newNode);
+                    float move = iteration(newNode, depth - 1, false);
+                    if (move > bestMoveValue) {
+                        bestMoveColumn = i;
+                        bestMoveRow = j;
+                        bestMoveValue = move;
+                    }
                 }
             }
         }
 
-        // play all possible opponent moves
+        moveEnd();
 
-        // make new iteration calls
+        if (callMakeMove) {
+            gamePanel.makeMove(bestMoveColumn, bestMoveRow);
+        } else {
+            selectedColumn = bestMoveColumn;
+            selectedRow = bestMoveRow;
+        }
+    }
+
+    private float iteration(MinimaxNode node, int depth, boolean maxPlayer) {
+        int asd = mainFrame.heapsCo();
+        if (gamePanel.isGameFinished(node.state, asd)) {
+            if (maxPlayer) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+        if (depth == 0) {
+            // return heuristic value
+            return 0.5f;
+        }
+
+        if (maxPlayer) {
+            // find best next move
+            float bestValue = 0;
+            for (int i = 0; i < mainFrame.heapsCo(); i++) {
+                for (int j = 0; j < mainFrame.heapStates[i]; j++) {
+                    if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
+                        MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
+                        newNode.state[i] = j;
+                        float value = iteration(newNode, depth - 1, false);
+                        if (value > bestValue) {
+                            bestValue = value;
+                        }
+                    }
+                }
+            }
+            return bestValue;
+        } else {
+            // find worst next move
+            float bestValue = 1;
+            for (int i = 0; i < mainFrame.heapsCo(); i++) {
+                for (int j = 0; j < mainFrame.heapStates[i]; j++) {
+                    if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
+                        MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
+                        newNode.state[i] = j;
+                        float value = iteration(newNode, depth - 1, true);
+                        if (value < bestValue) {
+                            bestValue = value;
+                        }
+                    }
+                }
+            }
+            return bestValue;
+        }
     }
 }

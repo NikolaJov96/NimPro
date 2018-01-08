@@ -23,10 +23,12 @@ class CPUvCPUThread extends Thread {
     @Override
     public void run() {
         while (gamePanel.gameOn) {
-            AI ai = new RandomAi(mainFrame, gamePanel);
+            AI ai = gamePanel.getAI(gamePanel.playerOnMove, false);
             ai.start();
-            try { ai.join(); }
-            catch (InterruptedException e) { e.printStackTrace(); }
+            try {
+                ai.join();
+                gamePanel.makeMove(ai.selectedColumn, ai.selectedRow);
+            } catch (InterruptedException e) { ai.interrupt();  }
         }
     }
 }
@@ -55,9 +57,10 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
     private volatile int highlightedRow = -1;
 
     public boolean gameOn = false;
-    private GameMode gameMode;
-    private int playerOnMove;
-    private int prevMove = MainFrame.maxHeaps;
+    public GameMode gameMode;
+    CPUvCPUThread cpuVScpu;
+    public int playerOnMove;
+    public int prevMove = MainFrame.maxHeaps;
 
     public GamePanel(MainFrame mainFrame) throws IOException {
         this.mainFrame = mainFrame;
@@ -80,16 +83,16 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         super.paintComponent(g);
 
         g.setColor(Color.ORANGE);
-        g.fillRect(0, mainFrame.height * 3/4,
-                mainFrame.heapsCo() * mainFrame.widthPerHeap, mainFrame.height * 1/4);
+        g.fillRect(0, MainFrame.height * 3/4,
+                mainFrame.heapsCo() * MainFrame.widthPerHeap, MainFrame.height * 1/4);
 
         // paint torus back
         printRings(g, torusBackImage, torusBackTransparentImage);
 
         // paint sticks
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
-            g.drawImage(stickImage, (int ) ((mainFrame.widthPerHeap - stickWidth) / 2.0 + i * mainFrame.widthPerHeap),
-                    (int) (mainFrame.height * 0.1), stickWidth, (int) (mainFrame.height * 0.8),null);
+            g.drawImage(stickImage, (int ) ((MainFrame.widthPerHeap - stickWidth) / 2.0 + i * MainFrame.widthPerHeap),
+                    (int) (MainFrame.height * 0.1), stickWidth, (int) (MainFrame.height * 0.8),null);
         }
 
         // paint tours front
@@ -100,25 +103,25 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
             int continueIndex = 0;
             for (int j = 0; j < mainFrame.heapStates[i]; j++) {
-                int x1 = (int) (mainFrame.widthPerHeap * (i + horizontalSelectionMargin));
+                int x1 = (int) (MainFrame.widthPerHeap * (i + horizontalSelectionMargin));
                 int y1 = ringStartPos - (j * ringSpacing);
                 if (highlightedRow != -1 && highlightedColumn == i &&
                         ((!gameOn && j > highlightedRow) || (gameOn && j >= highlightedRow))) {
                     g.drawImage(transparentImage, x1, y1,
-                            (int)(mainFrame.widthPerHeap * (1 - 2 * horizontalSelectionMargin)),
+                            (int)(MainFrame.widthPerHeap * (1 - 2 * horizontalSelectionMargin)),
                             ringHeight, null);
                 } else {
                     g.drawImage(image, x1, y1,
-                            (int) (mainFrame.widthPerHeap * (1 - 2 * horizontalSelectionMargin)),
+                            (int) (MainFrame.widthPerHeap * (1 - 2 * horizontalSelectionMargin)),
                             ringHeight, null);
                 }
             }
             if (!gameOn && highlightedRow >= mainFrame.heapStates[i] && highlightedColumn == i) {
-                for (int j = continueIndex; j <= highlightedRow && j < mainFrame.maxHeaps; j++) {
-                    int x1 = (int) (mainFrame.widthPerHeap * (i + horizontalSelectionMargin));
+                for (int j = continueIndex; j <= highlightedRow && j < MainFrame.maxHeaps; j++) {
+                    int x1 = (int) (MainFrame.widthPerHeap * (i + horizontalSelectionMargin));
                     int y1 = ringStartPos - (j * ringSpacing);
                     g.drawImage(transparentImage, x1, y1,
-                            (int)(mainFrame.widthPerHeap * (1 - 2 * horizontalSelectionMargin)),
+                            (int)(MainFrame.widthPerHeap * (1 - 2 * horizontalSelectionMargin)),
                             ringHeight, null);
                 }
             }
@@ -131,15 +134,15 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         int yPos = e.getY();
 
         int columnNo = getColumnNo(xPos);
-        if (yPos > mainFrame.height * verticalSelectionMargin && yPos < mainFrame.height * (1 - verticalSelectionMargin)) {
+        if (yPos > MainFrame.height * verticalSelectionMargin && yPos < MainFrame.height * (1 - verticalSelectionMargin)) {
             highlightedColumn = columnNo;
         } else {
             highlightedColumn = -1;
         }
 
         int rowNo = getRowNo(yPos);
-        if (xPos > mainFrame.widthPerHeap * horizontalSelectionMargin &&
-                xPos < mainFrame.heapsCo() * mainFrame.widthPerHeap - mainFrame.widthPerHeap * horizontalSelectionMargin) {
+        if (xPos > MainFrame.widthPerHeap * horizontalSelectionMargin &&
+                xPos < mainFrame.heapsCo() * MainFrame.widthPerHeap - MainFrame.widthPerHeap * horizontalSelectionMargin) {
             highlightedRow = rowNo;
         } else {
             highlightedRow = -1;
@@ -147,7 +150,7 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
     }
 
     private int getRowNo(int yPos) {
-        if (yPos > ringStartPos + ringHeight || yPos < ringStartPos - (mainFrame.maxHeaps - 1) * ringSpacing) {
+        if (yPos > ringStartPos + ringHeight || yPos < ringStartPos - (MainFrame.maxHeaps - 1) * ringSpacing) {
             return -1;
         }
         int row = 0;
@@ -158,13 +161,28 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
     }
 
     private int getColumnNo(int xPos) {
-        int columnWidth = mainFrame.widthPerHeap;
+        int columnWidth = MainFrame.widthPerHeap;
         int column = xPos / columnWidth;
         xPos %= columnWidth;
         if (xPos < horizontalSelectionMargin * columnWidth || xPos > (1 - horizontalSelectionMargin) * columnWidth) {
             return -1;
         }
         return column;
+    }
+
+    public AI getAI(int player, boolean callMakeMove) {
+        String level = mainFrame.getCPULevel(player);
+        if (level.equals(MainFrame.cpuLabels[0])) {
+            return new RandomAi(mainFrame, this, callMakeMove);
+        } else if (level.equals(MainFrame.cpuLabels[1])) {
+            return new Minimax(mainFrame, this, callMakeMove, prevMove, mainFrame.getCPUDepth(player));
+//        } else if (level.equals(MainFrame.cpuLabels[2])) {
+//            return new RandomAi(mainFrame, this);
+//        } else if (level.equals(MainFrame.cpuLabels[3])) {
+//            return new RandomAi(mainFrame, this);
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -182,7 +200,7 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
                     }
 
                     if (gameMode.getPlayerType(playerOnMove) == GameMode.PlayerType.CPU) {
-                        AI ai = new RandomAi(mainFrame, this);
+                        AI ai = getAI(playerOnMove, true);
                         ai.start();
                     }
                 }
@@ -195,6 +213,15 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         }
     }
 
+    public boolean isGameFinished(int [] heapStates, int numHeaps) {
+        for (int i = 0; i < numHeaps; i++) {
+            if (heapStates[i] != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean makeMove(int column, int row) {
         if (!isMoveValid(column, row, mainFrame.heapStates, prevMove)) {
             return false;
@@ -203,13 +230,7 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         prevMove = mainFrame.heapStates[column] - row;
         mainFrame.heapStates[column] = row;
 
-        boolean gameFinished = true;
-        for (int i = 0; i < mainFrame.heapsCo(); i++) {
-            if (mainFrame.heapStates[i] != 0) {
-                gameFinished = false;
-            }
-        }
-        if (gameFinished) {
+        if (isGameFinished(mainFrame.heapStates, mainFrame.heapsCo())) {
             JOptionPane.showMessageDialog(null,
                     "No more chips, the winner is " + gameMode.getMessage(playerOnMove) + "!");
             mainFrame.toggleGameToggle();
@@ -237,6 +258,9 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
     }
 
     public boolean isMoveValid(int column, int row, int [] states, int prevMove) {
+        if (states[column] <= row) {
+            return false;
+        }
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
             if (i == column) {
                 continue;
@@ -256,28 +280,28 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
     }
 
     public void resetSize() {
-        setPreferredSize(new Dimension(mainFrame.heapsCo() * mainFrame.widthPerHeap, mainFrame.height));
+        setPreferredSize(new Dimension(mainFrame.heapsCo() * MainFrame.widthPerHeap, MainFrame.height));
     }
 
     public void initGame(GameMode gameMode) {
         this.gameMode = gameMode;
         gameOn = true;
         playerOnMove = 0;
-        prevMove = mainFrame.maxHeaps;
+        prevMove = MainFrame.maxHeaps;
         setMessageLabel();
 
         if (gameMode.getPlayerType(0) == GameMode.PlayerType.CPU &&
                 gameMode.getPlayerType(1) == GameMode.PlayerType.CPU) {
-            CPUvCPUThread thread = new CPUvCPUThread(mainFrame, this);
-            thread.start();
+            cpuVScpu = new CPUvCPUThread(mainFrame, this);
+            cpuVScpu.start();
         } else if (gameMode.getPlayerType(0) == GameMode.PlayerType.CPU) {
-            AI ai = new RandomAi(mainFrame, this);
+            AI ai = getAI(playerOnMove, true);
             ai.start();
         }
 
     }
 
-    private void setMessageLabel() {
+    public void setMessageLabel() {
         if (playerOnMove == 0) {
             messageLabel.setForeground(Color.green);
         } else {
@@ -288,6 +312,17 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
 
     public void stopGame() {
         gameOn = false;
+
+        if (cpuVScpu != null) {
+            try {
+                cpuVScpu.interrupt();
+                if (Thread.currentThread() != cpuVScpu) {
+                    cpuVScpu.join();
+                }
+            } catch (InterruptedException e) { e.printStackTrace(); }
+            cpuVScpu = null;
+        }
+
         messageLabel.setForeground(Color.black);
         messageLabel.setText(menuText);
     }
