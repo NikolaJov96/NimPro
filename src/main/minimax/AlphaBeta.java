@@ -5,24 +5,10 @@ import main.MainFrame;
 
 import java.util.ArrayList;
 
-public class Minimax extends AI {
-    protected int prevMove;
-    protected int depth;
+public class AlphaBeta extends Minimax {
 
-    protected class MinimaxNode {
-        public int [] state;
-        public int prevMove;
-
-        public MinimaxNode(int [] state, int prevMove) {
-            this.state = state;
-            this.prevMove = prevMove;
-        }
-    }
-
-    public Minimax(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove, int prevMove, int depth) {
-        super(mainFrame, gamePanel, callMakeMove);
-        this.prevMove = prevMove;
-        this.depth = depth;
+    public AlphaBeta(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove, int prevMove, int depth) {
+        super(mainFrame, gamePanel, callMakeMove, prevMove, depth);
     }
 
     @Override
@@ -40,7 +26,7 @@ public class Minimax extends AI {
                 if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
                     MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                     newNode.state[i] = j;
-                    float move = iteration(newNode, depth - 1, false);
+                    float move = iteration(newNode, depth - 1, 0, 1, false);
                     if (move > bestMoveValue) {
                         bestMoveColumns.clear();
                         bestMoveRows.clear();
@@ -72,7 +58,7 @@ public class Minimax extends AI {
         }
     }
 
-    private float iteration(MinimaxNode node, int depth, boolean maxPlayer) {
+    private float iteration(MinimaxNode node, int depth, float alpha, float beta, boolean maxPlayer) {
         if (gamePanel.isGameFinished(node.state, mainFrame.heapsCo())) {
             if (maxPlayer) {
                 return 0;
@@ -103,16 +89,21 @@ public class Minimax extends AI {
         if (maxPlayer) {
             // find best next move
             float bestValue = 0;
-            for (int i = 0; i < mainFrame.heapsCo(); i++) {
-                for (int j = 0; j < mainFrame.heapStates[i]; j++) {
+            boolean terminated = false;
+            for (int i = 0; i < mainFrame.heapsCo() && !terminated; i++) {
+                for (int j = 0; j < mainFrame.heapStates[i] && !terminated; j++) {
                     if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
                         MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                         newNode.state[i] = j;
-                        float value = iteration(newNode, depth - 1, false);
+                        float value = iteration(newNode, depth - 1, alpha, beta, false);
                         if (value == -1) {
                             value = 0.5f;//ret;
                         }
                         bestValue = Math.max(bestValue, value);
+                        alpha = Math.max(alpha, bestValue);
+                        if (beta <= alpha) {
+                            terminated = true;
+                        }
                     }
                 }
             }
@@ -120,12 +111,18 @@ public class Minimax extends AI {
         } else {
             // find worst next move
             float bestValue = 1;
-            for (int i = 0; i < mainFrame.heapsCo(); i++) {
-                for (int j = 0; j < mainFrame.heapStates[i]; j++) {
+            boolean terminated = false;
+            for (int i = 0; i < mainFrame.heapsCo() && !terminated; i++) {
+                for (int j = 0; j < mainFrame.heapStates[i] && !terminated; j++) {
                     if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
                         MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                         newNode.state[i] = j;
-                        bestValue = Math.min(bestValue, iteration(newNode, depth - 1, true));
+                        float value = iteration(newNode, depth - 1, alpha, beta, true);
+                        bestValue = Math.min(bestValue, value);
+                        beta = Math.min(beta, bestValue);
+                        if (beta <= alpha) {
+                            terminated = true;
+                        }
                     }
                 }
             }

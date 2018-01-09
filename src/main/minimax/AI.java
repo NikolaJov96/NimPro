@@ -11,7 +11,7 @@ public class AI extends Thread {
     public int selectedColumn;
     public int selectedRow;
 
-    private static final long minWaitTime = 1000;
+    private static final long minWaitTime = 500;
     private long startTime;
 
     public AI(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove) {

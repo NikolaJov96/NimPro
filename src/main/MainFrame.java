@@ -3,6 +3,7 @@ package main;
 import main.gamemodes.*;
 
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -46,7 +47,7 @@ public class MainFrame extends JFrame implements ChangeListener {
     public static final String [] cpuLabels = { "random", "minimax", "alpha-beta", "pro" };
 
     private JPanel mainPanel = new JPanel(new BorderLayout());
-    private Box menuBox = Box.createVerticalBox();
+    private JPanel menuPanel = new JPanel();
 
     public JRadioButton [] playerModes = new JRadioButton [4];
     {
@@ -87,14 +88,29 @@ public class MainFrame extends JFrame implements ChangeListener {
         repaintThread.start();
     }
 
+    private void addPanel(JPanel panel) {
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setMaximumSize(panel.getPreferredSize());
+        menuPanel.add(panel);
+    }
+
     private void initWindow() {
-        menuBox.add(new JLabel("Chose player mode:"));
-        playerModes[0].setSelected(true);
-        ButtonGroup buttonGroup = new ButtonGroup();
-        for (int i = 0; i < playerModes.length; i++) {
-            menuBox.add(playerModes[i]);
-            buttonGroup.add(playerModes[i]);
-            playerModes[i].addActionListener(e -> updateCPUSettings());
+        menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
+        menuPanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+
+        {
+            JPanel panel = new JPanel();
+            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+            panel.add(new JLabel("  Chose player mode:"));
+            playerModes[0].setSelected(true);
+            ButtonGroup buttonGroup = new ButtonGroup();
+            for (int i = 0; i < playerModes.length; i++) {
+                playerModes[i].setAlignmentX(LEFT_ALIGNMENT);
+                panel.add(playerModes[i]);
+                buttonGroup.add(playerModes[i]);
+                playerModes[i].addActionListener(e -> updateCPUSettings());
+            }
+            addPanel(panel);
         }
 
         {
@@ -103,34 +119,51 @@ public class MainFrame extends JFrame implements ChangeListener {
             heaps.setValue(3);
             heaps.addChangeListener(this);
             panel.add(heaps);
-            menuBox.add(panel);
+            addPanel(panel);
         }
 
-        randomSetup.addActionListener(e -> randomSetupToggle());
-        menuBox.add(randomSetup);
-
-        menuBox.add(new JLabel("CPU1 level and depth:"));
         {
             JPanel panel = new JPanel();
-            panel.add(cpuChoice[0]);
-            panel.add(cpuDepth[0]);
-            menuBox.add(panel);
+            panel.add(new JLabel("Heap states:"));
+            randomSetup.setAlignmentX(Component.LEFT_ALIGNMENT);
+            randomSetup.addActionListener(e -> randomSetupToggle());
+            panel.add(randomSetup);
+            addPanel(panel);
         }
-        menuBox.add(new JLabel("CPU2 level and depth:"));
+
         {
             JPanel panel = new JPanel();
-            panel.add(cpuChoice[1]);
-            panel.add(cpuDepth[1]);
-            menuBox.add(panel);
+            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+            panel.add(new JLabel("  CPU1 level and depth:"));
+            {
+                JPanel inPanel = new JPanel();
+                inPanel.add(cpuChoice[0]);
+                inPanel.add(cpuDepth[0]);
+                inPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                panel.add(inPanel);
+            }
+            panel.add(new JLabel("  CPU2 level and depth:"));
+            {
+                JPanel inPanel = new JPanel();
+                inPanel.add(cpuChoice[1]);
+                inPanel.add(cpuDepth[1]);
+                inPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                panel.add(inPanel);
+            }
+            addPanel(panel);
         }
 
-        toggleGame.addActionListener(e -> toggleGameToggle());
-        menuBox.add(toggleGame);
+        {
+            JPanel panel = new JPanel(new GridBagLayout());
+            toggleGame.addActionListener(e -> toggleGameToggle());
+            Dimension dim = toggleGame.getPreferredSize();
+            toggleGame.setPreferredSize(new Dimension((int)(dim.width * 1.5), (int)(dim.height * 1.5)));
+            panel.add(toggleGame);
+            panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            menuPanel.add(panel);
+        }
 
-        JPanel boxPanel = new JPanel();
-        boxPanel.setPreferredSize(new Dimension(menuWidth, height));
-        boxPanel.add(menuBox);
-        mainPanel.add(boxPanel, BorderLayout.WEST);
+        mainPanel.add(menuPanel, BorderLayout.WEST);
 
         mainPanel.add(gamePanel, BorderLayout.CENTER);
 

@@ -176,8 +176,8 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
             return new RandomAi(mainFrame, this, callMakeMove);
         } else if (level.equals(MainFrame.cpuLabels[1])) {
             return new Minimax(mainFrame, this, callMakeMove, prevMove, mainFrame.getCPUDepth(player));
-//        } else if (level.equals(MainFrame.cpuLabels[2])) {
-//            return new RandomAi(mainFrame, this);
+        } else if (level.equals(MainFrame.cpuLabels[2])) {
+            return new AlphaBeta(mainFrame, this, callMakeMove, prevMove, mainFrame.getCPUDepth(player));
 //        } else if (level.equals(MainFrame.cpuLabels[3])) {
 //            return new RandomAi(mainFrame, this);
         } else {
