@@ -1,30 +1,54 @@
-package main.minimax;
+package etf.nim.jn150081d.minimax;
 
-import main.GamePanel;
-import main.MainFrame;
+import etf.nim.jn150081d.GamePanel;
+import etf.nim.jn150081d.MainFrame;
 
 import java.util.ArrayList;
 
+/**
+ * Minimax is most basic implementation of minimax AI algorithm
+ */
 public class Minimax extends AI {
-    protected int prevMove;
-    protected int depth;
+    int prevMove;
+    int depth;
 
-    protected class MinimaxNode {
-        public int [] state;
-        public int prevMove;
+    /**
+     * MinimaxNode represents node of the search tree (although the tree itself is not generated)
+     */
+    class MinimaxNode {
+        int [] state;
+        int prevMove;
 
-        public MinimaxNode(int [] state, int prevMove) {
+        /**
+         * MinimaxNode constructor
+         *
+         * @param state state of the game in that particular node
+         * @param prevMove number of chips removed by previous player
+         */
+        MinimaxNode(int[] state, int prevMove) {
             this.state = state;
             this.prevMove = prevMove;
         }
     }
 
+    /**
+     * Minimax constructor
+     *
+     * @param mainFrame assigned mainFrame
+     * @param gamePanel assigned gamePanel
+     * @param callMakeMove should this AI call makeMove method or not
+     * @param prevMove number of chips removed by previous player
+     * @param depth the maximal depth of the search tree
+     */
     public Minimax(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove, int prevMove, int depth) {
         super(mainFrame, gamePanel, callMakeMove);
         this.prevMove = prevMove;
         this.depth = depth;
     }
 
+    /**
+     * Calculates a score for each possible move and calls makeMove is needed
+     */
     @Override
     public void run() {
         moveStart();
@@ -56,13 +80,6 @@ public class Minimax extends AI {
 
         moveEnd();
 
-        if (bestMoveValue == 1) {
-            System.out.println("win");
-        }
-        if (bestMoveValue == 0) {
-            System.out.println("loss");
-        }
-
         int id = (int) (Math.random() * bestMoveColumns.size());
         if (callMakeMove) {
             gamePanel.makeMove(bestMoveColumns.get(id), bestMoveRows.get(id));
@@ -72,6 +89,14 @@ public class Minimax extends AI {
         }
     }
 
+    /**
+     * Recursively calculates a score for each possible move until the maximal search depth
+     *
+     * @param node state in which next move information is needed
+     * @param depth current depth
+     * @param maxPlayer is the player on the move maximizing or minimizing score
+     * @return returns the score of starting state
+     */
     private float iteration(MinimaxNode node, int depth, boolean maxPlayer) {
         if (gamePanel.isGameFinished(node.state, mainFrame.heapsCo())) {
             if (maxPlayer) {
@@ -86,9 +111,9 @@ public class Minimax extends AI {
             heuristic ^= node.state[i]; // xor
         }
         float ret = 0.5f;
-//        if (heuristic == 0) {
-//            ret = 0.8f;
-//        }
+        if (heuristic == 0) {
+            ret = 0.8f;
+        }
 
         if (depth == 0) {
             // return heuristic value
@@ -110,7 +135,7 @@ public class Minimax extends AI {
                         newNode.state[i] = j;
                         float value = iteration(newNode, depth - 1, false);
                         if (value == -1) {
-                            value = 0.5f;//ret;
+                            value = ret;
                         }
                         bestValue = Math.max(bestValue, value);
                     }

@@ -1,17 +1,30 @@
-package main.minimax;
+package etf.nim.jn150081d.minimax;
 
-import main.GamePanel;
-import main.MainFrame;
+import etf.nim.jn150081d.GamePanel;
+import etf.nim.jn150081d.MainFrame;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
+/**
+ * RandomAi represents most basic bot that plays random moves
+ */
 public class RandomAi extends AI {
 
+    /**
+     * RandomAi constructor
+     *
+     * @param mainFrame assigned mainFrame
+     * @param gamePanel assigned gamePanel
+     * @param callMakeMove should this AI call makeMove method or not
+     */
     public RandomAi(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove) {
         super(mainFrame, gamePanel, callMakeMove);
     }
 
+    /**
+     * Calculates move and calls makeMove is needed
+     */
     @Override
     public void run() {
         moveStart();

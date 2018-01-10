@@ -1,6 +1,6 @@
-package main;
+package etf.nim.jn150081d;
 
-import main.gamemodes.*;
+import etf.nim.jn150081d.gamemodes.*;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -10,15 +10,26 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/**
+ * RepaintThread is started on the beginning of the program and is used to repaint screen
+ */
 class RepaintThread extends Thread {
     private static final int sleepTime = 1000 / 30;
 
     private MainFrame mainFrame;
 
+    /**
+     * RepaintThread constructor
+     *
+     * @param mainFrame Reference to the main application window
+     */
     RepaintThread(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
     }
 
+    /**
+     * Runs during application execution and repaints main frame
+     */
     @Override
     public void run() {
         while (mainFrame.running) {
@@ -32,11 +43,13 @@ class RepaintThread extends Thread {
     }
 }
 
+/**
+ * MainFrame is encapsulation of GUI features of the application
+ */
 public class MainFrame extends JFrame implements ChangeListener {
-    private static final int menuWidth = 200;
-    public static final int widthPerHeap = 100;
-    public static final int height = 400;
-    public static final int maxHeaps = 10;
+    static final int widthPerHeap = 100;
+    static final int height = 400;
+    static final int maxHeaps = 10;
 
     private static final String windowName = "NimPro";
     private static final String [] radioButtonText =
@@ -44,12 +57,12 @@ public class MainFrame extends JFrame implements ChangeListener {
     private static final String randomSetupText = "RANDOM";
     private static final String startGameText = "START";
     private static final String stopGameText = "STOP";
-    public static final String [] cpuLabels = { "random", "minimax", "alpha-beta", "pro" };
+    static final String [] cpuLabels = { "random", "minimax", "alpha-beta", "pro" };
 
     private JPanel mainPanel = new JPanel(new BorderLayout());
     private JPanel menuPanel = new JPanel();
 
-    public JRadioButton [] playerModes = new JRadioButton [4];
+    private JRadioButton [] playerModes = new JRadioButton [4];
     {
         for (int i = 0; i < playerModes.length; i++) {
             playerModes[i] = new JRadioButton(radioButtonText[i]);
@@ -61,7 +74,7 @@ public class MainFrame extends JFrame implements ChangeListener {
     private JButton randomSetup = new JButton(randomSetupText);
     private JButton toggleGame = new JButton(startGameText);
 
-    private JComboBox<String> [] cpuChoice = new JComboBox[2];
+    private JComboBox[] cpuChoice = new JComboBox[2];
     private JSpinner [] cpuDepth = new JSpinner[2];
     {
         cpuChoice[0] = new JComboBox<>(cpuLabels);
@@ -72,28 +85,40 @@ public class MainFrame extends JFrame implements ChangeListener {
 
     private GamePanel gamePanel = new GamePanel(this);
 
-    public int [] initHeapStates = new int [maxHeaps];
+    int [] initHeapStates = new int [maxHeaps];
     public volatile int [] heapStates = new int [maxHeaps];
 
-    public enum Mode { MENU, GAME };
+    public enum Mode { MENU, GAME }
     private Mode mode = Mode.MENU;
 
-    public boolean running = true;
-    private RepaintThread repaintThread = new RepaintThread(this);
+    boolean running = true;
 
-    public MainFrame() throws IOException {
+    /**
+     * MainFrame constructor initializes GUI parameters
+     *
+     * @throws IOException when gamePanel initialization fails
+     */
+    private MainFrame() throws IOException {
         super(windowName);
         initWindow();
         randomSetupToggle();
-        repaintThread.start();
+        new RepaintThread(this).start();
     }
 
+    /**
+     * Configures and adds helper panel to the main menu panel
+     *
+     * @param panel to be added to the main menu panel
+     */
     private void addPanel(JPanel panel) {
         panel.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.setMaximumSize(panel.getPreferredSize());
         menuPanel.add(panel);
     }
 
+    /**
+     * Adds GUI components to the main frame
+     */
     private void initWindow() {
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
         menuPanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
@@ -104,11 +129,11 @@ public class MainFrame extends JFrame implements ChangeListener {
             panel.add(new JLabel("  Chose player mode:"));
             playerModes[0].setSelected(true);
             ButtonGroup buttonGroup = new ButtonGroup();
-            for (int i = 0; i < playerModes.length; i++) {
-                playerModes[i].setAlignmentX(LEFT_ALIGNMENT);
-                panel.add(playerModes[i]);
-                buttonGroup.add(playerModes[i]);
-                playerModes[i].addActionListener(e -> updateCPUSettings());
+            for (JRadioButton playerMode : playerModes) {
+                playerMode.setAlignmentX(LEFT_ALIGNMENT);
+                panel.add(playerMode);
+                buttonGroup.add(playerMode);
+                playerMode.addActionListener(e -> updateCPUSettings());
             }
             addPanel(panel);
         }
@@ -169,7 +194,7 @@ public class MainFrame extends JFrame implements ChangeListener {
 
         add(mainPanel);
 
-        setSize();
+        pack();
         setResizable(false);
         setVisible(true);
 
@@ -183,12 +208,20 @@ public class MainFrame extends JFrame implements ChangeListener {
         });
     }
 
+    /**
+     * Resize frame and game panel when number of heaps is changed
+     *
+     * @param e standard event handler parameter
+     */
     @Override
     public void stateChanged(ChangeEvent e) {
         gamePanel.resetSize();
-        setSize();
+        pack();
     }
 
+    /**
+     * Random button callback method
+     */
     private void randomSetupToggle() {
         if (mode == Mode.MENU) {
             // random heap setup
@@ -208,7 +241,10 @@ public class MainFrame extends JFrame implements ChangeListener {
         }
     }
 
-    public void toggleGameToggle() {
+    /**
+     * Start/stop button callback method
+     */
+    void toggleGameToggle() {
         if (mode == Mode.MENU) {
             // check heap setup
             for (int i = 0; i < heapsCo(); i++) {
@@ -219,10 +255,9 @@ public class MainFrame extends JFrame implements ChangeListener {
                     }
                 }
             }
+            // setup heap states
+            System.arraycopy(initHeapStates, 0, heapStates, 0, heapsCo());
             // start the game
-            for (int i = 0; i < heapsCo(); i++) {
-                heapStates[i] = initHeapStates[i];
-            }
             if (playerModes[0].isSelected()) { gamePanel.initGame(new ModePvP()); }
             else if (playerModes[1].isSelected()) { gamePanel.initGame(new ModePvE()); }
             else if (playerModes[2].isSelected()) { gamePanel.initGame(new ModeEvP()); }
@@ -230,15 +265,18 @@ public class MainFrame extends JFrame implements ChangeListener {
             initMode(Mode.GAME);
         } else {
             // restore heap states
-            for (int i = 0; i < heapsCo(); i++) {
-                heapStates[i] = initHeapStates[i];
-            }
+            System.arraycopy(initHeapStates, 0, heapStates, 0, heapsCo());
             // stop the game
             gamePanel.stopGame();
             initMode(Mode.MENU);
         }
     }
 
+    /**
+     * Initializes (changes) application mode
+     *
+     * @param newMode mode to be initialized (MENU / GAME)
+     */
     private void initMode(Mode newMode) {
         if (newMode == Mode.MENU) {
             // setup menu UI
@@ -266,6 +304,9 @@ public class MainFrame extends JFrame implements ChangeListener {
         }
     }
 
+    /**
+     * JRadioButton clicked callback method, enables and disables parts of the GUI
+     */
     private void updateCPUSettings() {
         cpuChoice[0].setEnabled(playerModes[2].isSelected() || playerModes[3].isSelected());
         cpuDepth[0].setEnabled(playerModes[2].isSelected() || playerModes[3].isSelected());
@@ -273,24 +314,42 @@ public class MainFrame extends JFrame implements ChangeListener {
         cpuDepth[1].setEnabled(playerModes[1].isSelected() || playerModes[3].isSelected());
     }
 
-    private void setSize() {
-        pack();
-    }
-
+    /**
+     * Number of heaps getter
+     *
+     * @return number of heaps
+     */
     public int heapsCo() {
         return (int) heaps.getValue();
     }
 
-    public String getCPULevel(int player) {
+    /**
+     * Getter for level of the CPU player on the moge
+     *
+     * @param player is first or second player on the move
+     * @return string label of the CPU player level
+     */
+    String getCPULevel(int player) {
         return cpuLabels[cpuChoice[player].getSelectedIndex()];
     }
 
-    public int getCPUDepth(int player) {
+    /**
+     * Getter for depth of the search tree for CPU player on the move
+     *
+     * @param player is first or second player on the move
+     * @return depth of the search tree
+     */
+    int getCPUDepth(int player) {
         return (int) cpuDepth[player].getValue();
     }
 
+    /**
+     * Main application method
+     *
+     * @param args system args
+     */
     public static void main(String[] args) {
-        try { MainFrame mainFrame = new MainFrame(); }
+        try { new MainFrame(); }
         catch (IOException e) { e.printStackTrace(); }
     }
 }

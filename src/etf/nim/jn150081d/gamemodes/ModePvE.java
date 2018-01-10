@@ -1,22 +1,20 @@
-package main.gamemodes;
+package etf.nim.jn150081d.gamemodes;
 
-import main.GamePanel;
-
-public class ModeEvP extends GameMode {
+public class ModePvE extends GameMode {
 
     @Override
     public String getMessage(int player) {
         if (player == 0) {
-            return "CPU";
+            return "Player";
         }
-        return "Player";
+        return "CPU";
     }
 
     @Override
     public PlayerType getPlayerType(int player) {
         if (player == 0) {
-            return PlayerType.CPU;
+            return PlayerType.HUMAN;
         }
-        return PlayerType.HUMAN;
+        return PlayerType.CPU;
     }
 }

@@ -1,4 +1,4 @@
-package main.gamemodes;
+package etf.nim.jn150081d.gamemodes;
 
 public abstract class GameMode {
     public enum PlayerType { HUMAN, CPU };

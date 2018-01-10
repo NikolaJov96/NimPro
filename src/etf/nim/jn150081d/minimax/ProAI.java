@@ -1,16 +1,31 @@
-package main.minimax;
+package etf.nim.jn150081d.minimax;
 
-import main.GamePanel;
-import main.MainFrame;
+import etf.nim.jn150081d.GamePanel;
+import etf.nim.jn150081d.MainFrame;
 
 import java.util.ArrayList;
 
-public class AlphaBeta extends Minimax {
+/**
+ * ProAI is tweaked AlphaBeta for stronger AI
+ */
+public class ProAI extends Minimax {
 
-    public AlphaBeta(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove, int prevMove, int depth) {
+    /**
+     * AlphaBeta constructor
+     *
+     * @param mainFrame assigned mainFrame
+     * @param gamePanel assigned gamePanel
+     * @param callMakeMove should this AI call makeMove method or not
+     * @param prevMove number of chips removed by previous player
+     * @param depth the maximal depth of the search tree
+     */
+    public ProAI(MainFrame mainFrame, GamePanel gamePanel, boolean callMakeMove, int prevMove, int depth) {
         super(mainFrame, gamePanel, callMakeMove, prevMove, depth);
     }
 
+    /**
+     * Calculates a score for each possible move and calls makeMove is needed
+     */
     @Override
     public void run() {
         moveStart();
@@ -42,13 +57,6 @@ public class AlphaBeta extends Minimax {
 
         moveEnd();
 
-        if (bestMoveValue == 1) {
-            System.out.println("win");
-        }
-        if (bestMoveValue == 0) {
-            System.out.println("loss");
-        }
-
         int id = (int) (Math.random() * bestMoveColumns.size());
         if (callMakeMove) {
             gamePanel.makeMove(bestMoveColumns.get(id), bestMoveRows.get(id));
@@ -58,6 +66,21 @@ public class AlphaBeta extends Minimax {
         }
     }
 
+    /**
+     * Recursively calculates a score for some of the moves until the maximal search depth
+     *
+     * Some moves can be proved not to be able to produce better results than already achieved,
+     * so they can be skipped and we can still be sure that we will get to the best possible move
+     *
+     * Features improved heuristic function in contrast to AlphaBeta
+     *
+     * @param node state in which next move information is needed
+     * @param depth current depth
+     * @param alpha current minimal guaranteed score that can be achieved from the starting state
+     * @param beta current maximal possible score that can be achieved from the stating state
+     * @param maxPlayer is the player on the move maximizing or minimizing score
+     * @return returns the score of starting state
+     */
     private float iteration(MinimaxNode node, int depth, float alpha, float beta, boolean maxPlayer) {
         if (gamePanel.isGameFinished(node.state, mainFrame.heapsCo())) {
             if (maxPlayer) {
@@ -72,9 +95,9 @@ public class AlphaBeta extends Minimax {
             heuristic ^= node.state[i]; // xor
         }
         float ret = 0.5f;
-//        if (heuristic == 0) {
-//            ret = 0.8f;
-//        }
+        if (heuristic == 0) {
+            ret = 0.8f;
+        }
 
         if (depth == 0) {
             // return heuristic value
@@ -97,7 +120,7 @@ public class AlphaBeta extends Minimax {
                         newNode.state[i] = j;
                         float value = iteration(newNode, depth - 1, alpha, beta, false);
                         if (value == -1) {
-                            value = 0.5f;//ret;
+                            value = ret;
                         }
                         bestValue = Math.max(bestValue, value);
                         alpha = Math.max(alpha, bestValue);

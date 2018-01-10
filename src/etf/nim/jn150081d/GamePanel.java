@@ -1,7 +1,7 @@
-package main;
+package etf.nim.jn150081d;
 
-import main.gamemodes.*;
-import main.minimax.*;
+import etf.nim.jn150081d.gamemodes.GameMode;
+import etf.nim.jn150081d.minimax.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -11,15 +11,24 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 
+/**
+ * CPUvCPUThread is used when CPU vs CPU mode is selected, it runs selected AIs nad waits for them to finish the move
+ */
 class CPUvCPUThread extends Thread {
-    private MainFrame mainFrame;
     private GamePanel gamePanel;
 
-    public CPUvCPUThread(MainFrame mainFrame, GamePanel gamePanel) {
-        this.mainFrame = mainFrame;
+    /**
+     * CPUvCPUThread constructor
+     *
+     * @param gamePanel parent gamePanel needed to access needed information
+     */
+    CPUvCPUThread(GamePanel gamePanel) {
         this.gamePanel = gamePanel;
     }
 
+    /**
+     * Runs alternates between AI opponents and waits for their moves until the end of the game or an interrupt
+     */
     @Override
     public void run() {
         while (gamePanel.gameOn) {
@@ -33,6 +42,9 @@ class CPUvCPUThread extends Thread {
     }
 }
 
+/**
+ * GamePanel is an actual drawing panel and a class that encapsulates the game data
+ */
 public class GamePanel extends JPanel implements MouseMotionListener, MouseListener {
     private static final double horizontalSelectionMargin = 0.1;
     private static final double verticalSelectionMargin = 0.1;
@@ -56,13 +68,19 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
     private volatile int highlightedColumn = -1;
     private volatile int highlightedRow = -1;
 
-    public boolean gameOn = false;
-    public GameMode gameMode;
-    CPUvCPUThread cpuVScpu;
-    public int playerOnMove;
+    boolean gameOn = false;
+    private GameMode gameMode;
+    private CPUvCPUThread cpuVScpu;
+    int playerOnMove;
     public int prevMove = MainFrame.maxHeaps;
 
-    public GamePanel(MainFrame mainFrame) throws IOException {
+    /**
+     * GamePanel constructor, called only once on the start of the program
+     *
+     * @param mainFrame reference to the mainFrame for access to needed values
+     * @throws IOException when texture loading fails
+     */
+    GamePanel(MainFrame mainFrame) throws IOException {
         this.mainFrame = mainFrame;
         messageLabel.setFont(new Font(messageLabel.getFont().getName(), Font.PLAIN, 20));
         add(messageLabel);
@@ -78,13 +96,18 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         stopGame();
     }
 
+    /**
+     * Paints heaps and chips to the panel
+     *
+     * @param g standard inherited paintComponent argument
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         g.setColor(Color.ORANGE);
         g.fillRect(0, MainFrame.height * 3/4,
-                mainFrame.heapsCo() * MainFrame.widthPerHeap, MainFrame.height * 1/4);
+                mainFrame.heapsCo() * MainFrame.widthPerHeap, MainFrame.height / 4);
 
         // paint torus back
         printRings(g, torusBackImage, torusBackTransparentImage);
@@ -99,14 +122,28 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         printRings(g, torusFrontImage, torusFrontTransparentImage);
     }
 
+    /**
+     * Paints rings to the panel
+     *
+     * Received images are images of parts of the chips in front or behind the sticks
+     *
+     * @param g standard inherited paintComponent argument
+     * @param image image to be painted
+     * @param transparentImage transparent image to be painted
+     */
     private void printRings(Graphics g, BufferedImage image, BufferedImage transparentImage) {
+        int selectedColumn = highlightedColumn;
+        int selectedRow = highlightedRow;
+        if (gameOn && !isMoveValid(selectedColumn, selectedRow, mainFrame.heapStates, prevMove)) {
+            selectedColumn = selectedRow = -1;
+        }
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
             int continueIndex = 0;
             for (int j = 0; j < mainFrame.heapStates[i]; j++) {
                 int x1 = (int) (MainFrame.widthPerHeap * (i + horizontalSelectionMargin));
                 int y1 = ringStartPos - (j * ringSpacing);
-                if (highlightedRow != -1 && highlightedColumn == i &&
-                        ((!gameOn && j > highlightedRow) || (gameOn && j >= highlightedRow))) {
+                if (selectedRow != -1 && selectedColumn == i &&
+                        ((!gameOn && j > selectedRow) || (gameOn && j >= selectedRow))) {
                     g.drawImage(transparentImage, x1, y1,
                             (int)(MainFrame.widthPerHeap * (1 - 2 * horizontalSelectionMargin)),
                             ringHeight, null);
@@ -116,8 +153,8 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
                             ringHeight, null);
                 }
             }
-            if (!gameOn && highlightedRow >= mainFrame.heapStates[i] && highlightedColumn == i) {
-                for (int j = continueIndex; j <= highlightedRow && j < MainFrame.maxHeaps; j++) {
+            if (!gameOn && selectedRow >= mainFrame.heapStates[i] && selectedColumn == i) {
+                for (int j = continueIndex; j <= selectedRow && j < MainFrame.maxHeaps; j++) {
                     int x1 = (int) (MainFrame.widthPerHeap * (i + horizontalSelectionMargin));
                     int y1 = ringStartPos - (j * ringSpacing);
                     g.drawImage(transparentImage, x1, y1,
@@ -128,6 +165,11 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         }
     }
 
+    /**
+     * Detects mouse movement and updates flags for selected chip
+     *
+     * @param e standard event handler parameter
+     */
     @Override
     public void mouseMoved(MouseEvent e) {
         int xPos = e.getX();
@@ -149,6 +191,12 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         }
     }
 
+    /**
+     * Calculates chip row in column, given y mouse coordinate
+     *
+     * @param yPos y mouse coordinate
+     * @return row number from the bottom
+     */
     private int getRowNo(int yPos) {
         if (yPos > ringStartPos + ringHeight || yPos < ringStartPos - (MainFrame.maxHeaps - 1) * ringSpacing) {
             return -1;
@@ -160,6 +208,12 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         return row;
     }
 
+    /**
+     * Calculates chip column, given x mouse coordinate
+     *
+     * @param xPos x mouse coordinate
+     * @return column number from the left
+     */
     private int getColumnNo(int xPos) {
         int columnWidth = MainFrame.widthPerHeap;
         int column = xPos / columnWidth;
@@ -170,7 +224,14 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         return column;
     }
 
-    public AI getAI(int player, boolean callMakeMove) {
+    /**
+     * Generates and returns AI player given player on the move
+     *
+     * @param player is first or second plater on the move
+     * @param callMakeMove should bot call makeMove method or it will be done by caller
+     * @return returns reference to created AI
+     */
+    AI getAI(int player, boolean callMakeMove) {
         String level = mainFrame.getCPULevel(player);
         if (level.equals(MainFrame.cpuLabels[0])) {
             return new RandomAi(mainFrame, this, callMakeMove);
@@ -178,13 +239,18 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
             return new Minimax(mainFrame, this, callMakeMove, prevMove, mainFrame.getCPUDepth(player));
         } else if (level.equals(MainFrame.cpuLabels[2])) {
             return new AlphaBeta(mainFrame, this, callMakeMove, prevMove, mainFrame.getCPUDepth(player));
-//        } else if (level.equals(MainFrame.cpuLabels[3])) {
-//            return new RandomAi(mainFrame, this);
+        } else if (level.equals(MainFrame.cpuLabels[3])) {
+            return new ProAI(mainFrame, this, callMakeMove, prevMove, mainFrame.getCPUDepth(player));
         } else {
             return null;
         }
     }
 
+    /**
+     * Detects mouse click and executes action based on the game state
+     *
+     * @param e standard event handler parameter
+     */
     @Override
     public void mouseClicked(MouseEvent e) {
         if (highlightedRow == -1 || highlightedColumn == -1) {
@@ -213,6 +279,13 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         }
     }
 
+    /**
+     * Checks if game with the given state is finished
+     *
+     * @param heapStates state of the heps
+     * @param numHeaps number of heaps
+     * @return returns whether game is finished
+     */
     public boolean isGameFinished(int [] heapStates, int numHeaps) {
         for (int i = 0; i < numHeaps; i++) {
             if (heapStates[i] != 0) {
@@ -222,6 +295,13 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         return true;
     }
 
+    /**
+     * Executes requested move inside the active game
+     *
+     * @param column column of the selected chip
+     * @param row row of the selected chip
+     * @return returns whether the move execution was successful
+     */
     public boolean makeMove(int column, int row) {
         if (!isMoveValid(column, row, mainFrame.heapStates, prevMove)) {
             return false;
@@ -246,6 +326,11 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         return true;
     }
 
+    /**
+     * Checks if there are any available moves
+     *
+     * @return whether any valid moves are available
+     */
     private boolean checkPossibleMove() {
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
             for (int j = 0; j < mainFrame.heapStates[i]; j++) {
@@ -257,8 +342,17 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         return false;
     }
 
+    /**
+     * Checks if desired move is valid, given the game state
+     *
+     * @param column column of the selected chip
+     * @param row row of the selected chip
+     * @param states states of heaps
+     * @param prevMove number of heaps
+     * @return whether the desired move is valid
+     */
     public boolean isMoveValid(int column, int row, int [] states, int prevMove) {
-        if (states[column] <= row) {
+        if (column < 0 || row < 0 || states[column] <= row) {
             return false;
         }
         for (int i = 0; i < mainFrame.heapsCo(); i++) {
@@ -269,21 +363,30 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
                 return false;
             }
         }
-        if (states[column] - row > 2 * prevMove) {
-            return false;
-        }
-        return true;
+        return states[column] - row <= 2 * prevMove;
     }
 
+    /**
+     * Deselects selected chip is mouse exits the game window
+     * @param e standard event handler parameter
+     */
     public void mouseExited(MouseEvent e) {
         highlightedRow = highlightedColumn = -1;
     }
 
-    public void resetSize() {
+    /**
+     * Resize gamePanel when number of chips is changed
+     */
+    void resetSize() {
         setPreferredSize(new Dimension(mainFrame.heapsCo() * MainFrame.widthPerHeap, MainFrame.height));
     }
 
-    public void initGame(GameMode gameMode) {
+    /**
+     * Initializes new game
+     *
+     * @param gameMode mode of the game to be initialized (player - CPU combination)
+     */
+    void initGame(GameMode gameMode) {
         this.gameMode = gameMode;
         gameOn = true;
         playerOnMove = 0;
@@ -292,7 +395,7 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
 
         if (gameMode.getPlayerType(0) == GameMode.PlayerType.CPU &&
                 gameMode.getPlayerType(1) == GameMode.PlayerType.CPU) {
-            cpuVScpu = new CPUvCPUThread(mainFrame, this);
+            cpuVScpu = new CPUvCPUThread(this);
             cpuVScpu.start();
         } else if (gameMode.getPlayerType(0) == GameMode.PlayerType.CPU) {
             AI ai = getAI(playerOnMove, true);
@@ -301,7 +404,10 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
 
     }
 
-    public void setMessageLabel() {
+    /**
+     * Updates text inside the message label in the top center of the gamePanel
+     */
+    private void setMessageLabel() {
         if (playerOnMove == 0) {
             messageLabel.setForeground(Color.green);
         } else {
@@ -310,7 +416,10 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         messageLabel.setText("On the move: " + gameMode.getMessage(playerOnMove));
     }
 
-    public void stopGame() {
+    /**
+     * Interrupts game and AI and resets all flags
+     */
+    void stopGame() {
         gameOn = false;
 
         if (cpuVScpu != null) {

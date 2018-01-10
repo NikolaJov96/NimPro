@@ -1,6 +1,4 @@
-package main.gamemodes;
-
-import main.GamePanel;
+package etf.nim.jn150081d.gamemodes;
 
 public class ModeEvE extends GameMode {
 
