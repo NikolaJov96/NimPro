@@ -129,7 +129,7 @@ public class Minimax extends AI {
             // find best next move
             float bestValue = 0;
             for (int i = 0; i < mainFrame.heapsCo(); i++) {
-                for (int j = 0; j < mainFrame.heapStates[i]; j++) {
+                for (int j = 0; j < node.state[i]; j++) {
                     if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
                         MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                         newNode.state[i] = j;
@@ -146,7 +146,7 @@ public class Minimax extends AI {
             // find worst next move
             float bestValue = 1;
             for (int i = 0; i < mainFrame.heapsCo(); i++) {
-                for (int j = 0; j < mainFrame.heapStates[i]; j++) {
+                for (int j = 0; j < node.state[i]; j++) {
                     if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
                         MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                         newNode.state[i] = j;

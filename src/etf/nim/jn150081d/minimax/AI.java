@@ -4,7 +4,7 @@ import etf.nim.jn150081d.MainFrame;
 import etf.nim.jn150081d.GamePanel;
 
 /**
- * AI is the abstract class representing an AI bot
+ * AI is abstract class representing an AI bot
  */
 public class AI extends Thread {
     MainFrame mainFrame;

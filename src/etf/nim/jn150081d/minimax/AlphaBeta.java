@@ -112,7 +112,7 @@ public class AlphaBeta extends Minimax {
             float bestValue = 0;
             boolean terminated = false;
             for (int i = 0; i < mainFrame.heapsCo() && !terminated; i++) {
-                for (int j = 0; j < mainFrame.heapStates[i] && !terminated; j++) {
+                for (int j = 0; j < node.state[i] && !terminated; j++) {
                     if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
                         MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                         newNode.state[i] = j;
@@ -134,7 +134,7 @@ public class AlphaBeta extends Minimax {
             float bestValue = 1;
             boolean terminated = false;
             for (int i = 0; i < mainFrame.heapsCo() && !terminated; i++) {
-                for (int j = 0; j < mainFrame.heapStates[i] && !terminated; j++) {
+                for (int j = 0; j < node.state[i] && !terminated; j++) {
                     if (gamePanel.isMoveValid(i, j, node.state, node.prevMove)) {
                         MinimaxNode newNode = new MinimaxNode(node.state.clone(), node.state[i] - j);
                         newNode.state[i] = j;

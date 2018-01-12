@@ -27,7 +27,7 @@ class CPUvCPUThread extends Thread {
     }
 
     /**
-     * Runs alternates between AI opponents and waits for their moves until the end of the game or an interrupt
+     * Alternates between AI opponents and waits for their moves until the end of the game or an interrupt
      */
     @Override
     public void run() {
@@ -102,7 +102,7 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
      * @param g standard inherited paintComponent argument
      */
     @Override
-    protected void paintComponent(Graphics g) {
+    public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         g.setColor(Color.ORANGE);
@@ -436,15 +436,31 @@ public class GamePanel extends JPanel implements MouseMotionListener, MouseListe
         messageLabel.setText(menuText);
     }
 
+    /**
+     * Empty method inherited from a listener
+     * @param e standard event handler parameter
+     */
     @Override
     public void mouseDragged(MouseEvent e) {}
 
+    /**
+     * Empty method inherited from a listener
+     * @param e standard event handler parameter
+     */
     @Override
     public void mousePressed(MouseEvent e) {}
 
+    /**
+     * Empty method inherited from a listener
+     * @param e standard event handler parameter
+     */
     @Override
     public void mouseReleased(MouseEvent e) {}
 
+    /**
+     * Empty method inherited from a listener
+     * @param e standard event handler parameter
+     */
     @Override
     public void mouseEntered(MouseEvent e) {}
 }

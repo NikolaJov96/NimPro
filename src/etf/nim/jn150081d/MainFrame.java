@@ -88,6 +88,9 @@ public class MainFrame extends JFrame implements ChangeListener {
     int [] initHeapStates = new int [maxHeaps];
     public volatile int [] heapStates = new int [maxHeaps];
 
+    /**
+     * Application mode (MENU / GAME)
+     */
     public enum Mode { MENU, GAME }
     private Mode mode = Mode.MENU;
 
@@ -341,6 +344,15 @@ public class MainFrame extends JFrame implements ChangeListener {
      */
     int getCPUDepth(int player) {
         return (int) cpuDepth[player].getValue();
+    }
+
+    /**
+     * Getter for constant for maximal number of heaps
+     *
+     * @return maximal number of heaps
+     */
+    public int getMaxHeaps() {
+        return maxHeaps;
     }
 
     /**
